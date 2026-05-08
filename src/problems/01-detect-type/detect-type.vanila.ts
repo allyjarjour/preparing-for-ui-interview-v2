@@ -23,7 +23,11 @@ export type TType =
   | string
 
 export const detectType = (value: any): TType => {
-    throw new Error('Not implemented')
+  if (value === null || value === undefined) {
+    return `${value}`
+  }
+
+  return Object.getPrototypeOf(value)?.constructor?.name?.toLowerCase() ?? 'object'
 }
 
 // --- Examples ---

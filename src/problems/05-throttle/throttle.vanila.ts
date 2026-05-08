@@ -1,8 +1,19 @@
 // bun test src/problems/05-throttle/test/throttle.test.ts
 
-export function throttle() {
+export function throttle<F extends (...args: any[]) => void>(fn: F, delay: number): (...args: Parameters<F>) => void {
+    let timestamp: number | null = null;
 
+    return function throttled(this: unknown, ...args: Parameters<F>): void {
+        if (timestamp && ((Date.now() - timestamp) <= delay)) {
+            return;
+        } else {
+            fn.apply(this, args)
+            timestamp = Date.now()
+        }
+
+    }
 }
+
 // --- Examples ---
 // Uncomment to test your implementation:
 
