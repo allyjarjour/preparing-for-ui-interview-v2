@@ -337,8 +337,8 @@ implementations.forEach(({ name, fn }) => {
         })
 
         it('should handle functions', () => {
-          const fn1 = () => {}
-          const fn2 = () => {}
+          const fn1 = () => { }
+          const fn2 = () => { }
           // Functions are compared by reference
           expect(deepEquals(fn1, fn1)).toBe(true)
           expect(deepEquals(fn1, fn2)).toBe(false)

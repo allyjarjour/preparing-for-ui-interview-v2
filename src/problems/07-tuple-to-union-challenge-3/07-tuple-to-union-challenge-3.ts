@@ -13,7 +13,7 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-type TupleToUnion = {}
+type TupleToUnion<T extends readonly any[]> = T[number]
 
 /* _____________ Test Cases _____________ */
 
