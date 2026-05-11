@@ -24,20 +24,41 @@ import { detectType } from '@course/utils'
  */
 export const stringify = (a: any, cache = new Set()) => {
   const type = detectType(a)
+  if (cache.has(a)) {
+    return '[Circular]'
+  }
   switch (type) {
     case 'null':
     case 'number':
     case 'bigint':
     case 'boolean':
+      return `${a}`
     case 'symbol':
-    case 'undefined':
     case 'string':
+    case 'undefined':
+      return `"${String(a)}"`
     case 'object':
-    case 'map':
+    case 'map': {
+      const entries = a instanceof Map ? a.entries() : Object.entries(a);
+      cache.add(a)
+      const content = Array.from(entries).map(([key, value]) => {
+        const valueStr: string = stringify(value, cache)
+        return `${key}: ${valueStr}`
+      }).join(', ')
+      return `{ ${content} }`
+    }
     case 'array':
-    case 'set':
+    case 'set': {
+      cache.add(a)
+      const content: string = Array.from(a).map((item: any) => {
+        return stringify(item, cache)
+      }).join(',')
+      return `[${content}]`
+    }
     case 'date':
+      return a.toLocaleString()
     case 'regexp':
+      return a.toString()
     default:
       return '"Unsupported Type"'
   }

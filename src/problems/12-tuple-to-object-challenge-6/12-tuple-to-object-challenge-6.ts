@@ -14,7 +14,9 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-type TupleToObject = {}
+type TupleToObject<T extends readonly (string | number | symbol)[]> = {
+  [K in T[number]]: K
+}
 
 /* _____________ Test Cases _____________ */
 
