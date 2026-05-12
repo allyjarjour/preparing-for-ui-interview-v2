@@ -8,9 +8,20 @@ const REJECTED: PromiseStatus = 'rejected'
 
 // Step 1: Define types and constants
 //  - Executor
+type TExecuter<T> = {
+  (resolve: (value: T | PromiseLike<T>) => void, reject: (reason: any) => void): any
+}
 //  - OnFulfilled<T,R>
 //  - OnRejected<R>
+type OnFullfilled<T, R> = null | undefined | ((value: T | PromiseLike<T>) => R)
+type OnRejected<R> = null | undefined | ((reason: any) => R)
 //  - Handler
+type THandler = {
+  onFullfilled: (val: any) => any,
+  onRejected: (reason: any) => any,
+  resolve: (value: any) => void,
+  reject: (reason: any) => void
+}
 //  - Update MyPromise<T> with types above
 // Step 2: Define class fields
 //  - handlers, status, value, isResolved
@@ -22,20 +33,88 @@ const REJECTED: PromiseStatus = 'rejected'
 // - Run tests for then / catch and chaining
 // Step 7: static resolve, static reject
 // - Run tests for statics
-export class MyPromise {
-  constructor(executor: any) {}
+export class MyPromise<T> {
+  value: T | null = null;
+  status: PromiseStatus = PENDING
+  handlers: THandler[] = []
+  isResolved = false
 
-  then() {
-    throw new Error('Not implemented')
+  constructor(executor: TExecuter<T>) {
+    try {
+      executor(this.resolve, this.reject)
+    } catch (e) {
+      this.reject(e)
+    }
   }
-  catch() {
-    throw new Error('Not implemented')
+
+  then<R = T>(onFulfilled: OnFullfilled<T, R>,
+    onRejected?: OnRejected<R>) {
+    const handler: THandler = {
+      onFullfilled: typeof onFulfilled === 'function' ? onFulfilled : (v: any) => v,
+      onRejected: typeof onRejected === 'function' ? onRejected : (e: any) => { throw e },
+      resolve: () => { },
+      reject: () => { }
+    }
+
+    const promise = new MyPromise<R>((resolve, reject) => {
+      handler.resolve = resolve
+      handler.reject = reject
+    })
+
+    this.handlers.push(handler)
+
+    if (this.status != PENDING) {
+      this.execute()
+    }
+    return promise;
   }
-  static resolve() {
-    throw new Error('Not implemented')
+  #settle(value: T | PromiseLike<T>, status: PromiseStatus = FULFILLED) {
+    if (this.isResolved) return
+
+    this.isResolved = true
+    const update = (value: T) => {
+      this.value = value
+      this.status = status
+      this.execute()
+    }
+    if (value instanceof MyPromise) {
+      value.then(update)
+    } else {
+      update(value as T)
+    }
   }
-  static reject() {
-    throw new Error('Not implemented')
+  execute = () => { 
+    for(const {onFullfilled, onRejected, resolve, reject} of this.handlers) {
+      const handler = this.status === FULFILLED ? onFullfilled : onRejected
+      queueMicrotask(() => {
+        try {
+          const value = handler(this.value)
+          if (value instanceof MyPromise) {
+            value.then(resolve, reject)
+          } else {
+            resolve(value)
+          }
+        } catch (e) {
+          reject(e)
+        }
+      })
+    }
+    this.handlers = []
+  }
+  resolve = (value: T | PromiseLike<T>) => {
+    this.#settle(value, FULFILLED)
+  }
+  reject = (reason: any) => {
+    this.#settle(reason, REJECTED)
+  }
+  catch<R>(onRejected?: OnRejected<R>) {
+    return this.then(null, onRejected)
+  }
+  static resolve<T>(value: T | PromiseLike<T>) {
+    return new MyPromise<T>((resolve) => resolve(value))
+  }
+  static reject<R>(value: R) {
+    return new MyPromise<R>((_, reject) => reject(value))
   }
 }
 
