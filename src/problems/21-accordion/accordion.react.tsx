@@ -1,4 +1,4 @@
-import css from './accordion.module.css'
+import css from './solution/accordion.module.css'
 import flex from '@course/styles'
 import cx from '@course/cx'
 
@@ -18,8 +18,33 @@ import cx from '@course/cx'
  * 4. Add CSS — use styles and cx() for className composition
  */
 
-type TProps = {}
+type TProps = {
+  items: Array<{
+    id: string
+    title: string
+    content: string
+  }>
+}
 
-export const Accordion = (props: TProps) => {
-  return <div>{/* TODO: implement */}</div>
+export const Accordion = ({ items }: TProps) => {  
+  return (
+     <div className={cx(css.container, flex.maxW600px, flex.flexColumnGap12, flex.w100)}>
+      {items.map((item) => (
+        <details key={item.id} className={css.details}>
+          <summary
+            className={cx(
+              css.summary,
+              flex.flexRowBetween,
+              flex.paddingHor16,
+              flex.paddingVer12,
+              flex.fontXL,
+            )}
+          >
+            {item.title}
+          </summary>
+          <p className={cx(css.content, flex.paddingVer16, flex.paddingHor16)}>{item.content}</p>
+        </details>
+      ))}
+    </div>
+  )
 }
