@@ -16,7 +16,7 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-// Your implementation here
+type LookUp<T extends { type: string }, U> = T extends { type: U } ? T : never
 
 /* _____________ Test Cases _____________ */
 

@@ -1,5 +1,4 @@
 import css from './star-rating.module.css'
-import flex from '@course/styles'
 import cx from '@course/cx'
 
 /**
@@ -28,8 +27,48 @@ import cx from '@course/cx'
 
 const STAR = '⭐️'
 const STARS_COUNT = 5
-type TProps = {}
 
-export const StarRating = (props: TProps) => {
-  return <div>TODO: Implement</div>
+type TProps = {
+  value: number
+  onChange: (value: number) => void
+  readonly?: boolean
+}
+
+export const StarRating = ({ value, onChange, readonly }: TProps) => {
+  const buttons = Array.from({ length: STARS_COUNT }, (_, i) => {
+    const starValue = i + 1
+    const checked = starValue <= value
+
+    return (
+      <button
+        key={starValue}
+        role="radio"
+        aria-label={`${starValue} Star${starValue > 1 ? 's' : ''}`}
+        aria-checked={checked}
+        aria-readonly={readonly}
+        data-star-value={starValue}
+        disabled={readonly}
+        className={cx(css.star, value && starValue <= value ? css.checked : '')}
+        onClick={() => {
+          return !readonly && onChange?.(starValue)
+        }}
+      >
+        {STAR}
+      </button>
+    )
+  })
+
+  const onClick = ({target}: React.MouseEvent) => {
+    if (target instanceof HTMLButtonElement) {
+      const btn = target.closest('button')
+      onChange?.(btn ? Number(btn.getAttribute('data-star-value')) : 0)
+    }
+  }
+
+  return (
+    <div role="radiogroup" aria-label="Star Rating" onClick={onClick}>
+      <input type="number" className={css.input} value={value} readOnly />
+      {buttons}
+    </div>
+  )
 }

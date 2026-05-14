@@ -22,8 +22,20 @@ type TTabsProps = {
  *   aria-controls="tab-panel", aria-selected={isActive}
  */
 export function Tab({ name, isActive }: TTabProps) {
-  // TODO: implement
-  return null
+  return (
+    <li role="presentation">
+      <button
+        role="tab"
+        id={`tab-${name}`}
+        data-tab-name={name}
+        aria-controls="tab-panel"
+        aria-selected={isActive}
+        className={cx(tabs.tab, isActive ? tabs.active : '')}
+      >
+        {name}
+      </button>
+    </li>
+  )
 }
 
 /**
@@ -45,8 +57,37 @@ export function Tab({ name, isActive }: TTabProps) {
  * - If target ref exists, use createPortal with a <div role="tabpanel"> wrapper instead
  */
 export function Tabs({ defaultTab, children, target }: TTabsProps) {
-  // TODO: implement
-  return <div>TODO: Implement Tabs</div>
+  const [activeTab, setActiveTab] = useState(defaultTab || children[0].props.name)
+
+  const onClick = ({ target }: React.MouseEvent) => {
+    if (!(target instanceof HTMLElement)) return
+
+    const button = target.closest('button[data-tab-name]')
+    if (button) {
+      const name = button.getAttribute('data-tab-name')
+      if (name) setActiveTab(name)
+    }
+  }
+
+  const content = children.find(child => child.props.name === activeTab)?.props.children
+
+  const wrapper = target ? () => createPortal(
+    <div role="tabpanel" id="tab-panel" aria-labelledby={`tab-${activeTab}`}>
+      {content}
+    </div>,
+    target.current!
+  ) : () => (
+    <section role="tabpanel" id="tab-panel" aria-labelledby="tab-{activeTab}">
+      {content}
+    </section>
+  )
+
+  return <nav>
+    <ul role="tablist" className={cx(flex.flexRowGap16, tabs.tabList)} onClick={onClick}>
+      {children.map(child => React.cloneElement(child, { isActive: child.props.name === activeTab }))}
+    </ul>
+    {wrapper() /* Render content in panel, using portal if target is provided */}
+  </nav>
 }
 
 /**

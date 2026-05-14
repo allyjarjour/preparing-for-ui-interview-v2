@@ -12,7 +12,7 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-// Your implementation here
+type MyReturnType<T extends (...args: any) => any> = T extends (...args: any) => infer R ? R : never
 
 /* _____________ Test Cases _____________ */
 
