@@ -1,6 +1,5 @@
-import {AbstractComponent, type TComponentConfig} from '@course/utils'
+import { AbstractComponent, type TComponentConfig } from '@course/utils'
 import css from './tooltip.module.css'
-import cx from '@course/cx'
 
 type TPositionType = 'top' | 'bottom' | 'left' | 'right' | 'auto'
 
@@ -34,6 +33,7 @@ function getAutoPosition(
     container: HTMLElement,
     boundaryElement: HTMLElement,
 ): Exclude<TPositionType, 'auto'> {
+    const [t, c, b] = [tooltip, container, boundaryElement].map(el => el.getBoundingClientRect())
     /**
      *                  ┌───TOP───┐
      *                  └─────────┘
@@ -44,10 +44,10 @@ function getAutoPosition(
      *                  └─────────┘
      */
     const candidates: TCandidate[] = [
-        {position: 'top', x: 0, y: 0},
-        {position: 'right', x: 0, y: 0},
-        {position: 'bottom', x: 0, y: 0},
-        {position: 'left', x: 0, y: 0},
+        { position: 'top', x: c.left, y: c.top - t.height },
+        { position: 'right', x: c.right, y: c.top },
+        { position: 'bottom', x: c.left, y: c.bottom },
+        { position: 'left', x: c.left - t.width, y: c.top },
     ];
 
     /**
@@ -63,9 +63,15 @@ function getAutoPosition(
      *        │                          │
      *        └──────────────────────────┘  ← boundaryRect.bottom
      */
-    const fit = ({x, y}: TCandidate) => {
+    const fit = ({ x, y }: TCandidate) => {
+        const isFitHorizontal = x >= b.left && x + t.width <= b.right;
+        const isFitVertical = y >= b.top && Math.ceil(y + t.height) <= b.bottom;
+        return isFitHorizontal && isFitVertical;
+
     }
-    return 'top';
+
+    const candiate = candidates.find(fit);
+    return candiate?.position ?? 'top';
 }
 
 /**
@@ -104,7 +110,7 @@ export class Tooltip extends AbstractComponent<TTooltipProps> {
      * a11y: role="tooltip" on the tooltip element
      */
     toHTML(): string {
-        return ``;
+        return `<div  class="${css.tooltip}" id="${this.id}" role="tooltip">${this.config.content}</div>`;
     }
 
     /**
@@ -114,6 +120,8 @@ export class Tooltip extends AbstractComponent<TTooltipProps> {
      * a11y: set aria-describedby on the trigger element pointing to the tooltip id
      */
     afterRender(): void {
+        this.container?.appendChild(this.config.children);
+        this.tooltip = document.getElementById(this.id)
     }
 
     /**
@@ -124,18 +132,25 @@ export class Tooltip extends AbstractComponent<TTooltipProps> {
      * a11y: focusin/focusout ensure keyboard users can trigger tooltip; Escape dismisses it
      */
     onMouseenter() {
+        this.showTooltip()
     }
 
     onMouseleave() {
+        this.hideTooltip()
     }
 
     onFocusin() {
+        this.showTooltip()
     }
 
     onFocusout() {
+        this.hideTooltip()
     }
 
     onKeydown(e: KeyboardEvent) {
+        if (e.key === 'Escape') {
+            this.tooltip!.style.display = 'none'
+        }
     }
 
     /**
@@ -145,8 +160,20 @@ export class Tooltip extends AbstractComponent<TTooltipProps> {
      *   remove all position classes, add the computed one
      */
     showTooltip() {
+        const tooltip = this.tooltip!;
+        const position = this.config.position;
+        tooltip.style.display = 'block'
+
+        const positionClass = position === 'auto' ? getAutoPosition(this.tooltip!, this.container!, this.config.boundary ?? document.body) : position ?? 'top';
+        for (const classname of Object.values(positions)) {
+            if (classname) {
+                tooltip.classList.remove(classname)
+            }
+        }
+        tooltip.classList.add(positions[positionClass])
     }
 
     hideTooltip() {
+        this.tooltip!.style.display = 'none'
     }
 }
