@@ -48,10 +48,36 @@ export interface IRedditComment {
  */
 export const RedditThread = ({ comments }: { comments: IRedditComment[] }) => {
   return (
-    <ul></ul>
+    <div className={cx(css.container, flex.wh100)}>
+      {comments.map((comment) => (
+        <RedditComment key={comment.id} {...comment} />
+      ))}
+    </div>
   )
 }
 
-function RedditComment({ id, replies, text, nickname, date }: IRedditComment) {
-  return null;
+function RedditComment({ id: _id, replies, text, nickname, date }: IRedditComment) {
+  return (
+    <article className={cx(css.comment, flex.padding16)}>
+      <header className={cx(flex.flexRowBetween)}>
+        <strong>{nickname}</strong>
+        <time>{date}</time>
+        <p>{text}</p>
+      </header>
+      {replies.length > 0 && (
+        <details>
+          <summary className={css.cursorPointer}>Replies</summary>
+          <ul className={cx(flex.paddingLeft16, css.repliesList)}>
+            {replies.map((reply) => {
+              return (
+                <li key={reply.id}>
+                  <RedditComment {...reply} />
+                </li>
+              )
+            })}
+          </ul>
+        </details>
+      )}
+    </article>
+  )
 }

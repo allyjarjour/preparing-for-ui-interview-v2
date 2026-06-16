@@ -11,7 +11,9 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-// Your implementation here
+type MyCapitalize<T extends string> = T extends `${infer First}${infer Rest}`
+  ? `${Uppercase<First>}${Rest}`
+  : T
 
 /* _____________ Test Cases _____________ */
 

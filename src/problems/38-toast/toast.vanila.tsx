@@ -15,10 +15,10 @@ type TToastItem = {
  * Toast item: { id: '1', text: 'Vanilla Toast: 1' }
  */
 let toastInstanceID = 0
+const TIMER = 3000
 export class Toast extends AbstractComponent<object> {
   id = toastInstanceID++
   listElement: HTMLUListElement | null = null
-  container: HTMLElement | null = null;
   // Step 1: Constructor — pass listeners: ['animationend'], store a unique instance id
   // Step 2: toast(item) — create a DOM element from getToastTemplate(item),
   //   append it to this.listElement,
@@ -31,10 +31,42 @@ export class Toast extends AbstractComponent<object> {
   constructor(config: TComponentConfig<object>) {
     super({
       ...config,
-      listeners: ['animationend']
+      listeners: ['animationend'],
     })
   }
   toHTML() {
     return `<ul aria-live="polite" aria-relevant="additions removals" id="toast-instance-${this.id}"></ul>`
+  }
+
+  getToastItem(item: TToastItem) {
+    return `<li role="status" aria-atomic="true" aria-live="polite" key="${item.id}" data-removed="false" data-id="${item.id}" class="${css.fadeIn}">
+                <div class="${cx(flex.flexColumnCenter, css.toast)}">
+                    <p>${item.text}</p>
+                </div>
+            </li>`
+  }
+
+  toast(item: TToastItem) {
+    const element = document.createElement('div')
+    element.innerHTML = this.getToastItem(item)
+    const toastElement = element.firstElementChild as HTMLLIElement
+    this.listElement?.appendChild(toastElement)
+    element.classList.add(css.fadeIn)
+
+    setTimeout(() => {
+      toastElement.classList.remove(css.fadeIn)
+      toastElement.classList.add(css.fadeOut)
+      toastElement.dataset.removed = 'true'
+    }, TIMER)
+  }
+
+  afterRender(): void {
+    this.listElement = document.getElementById(`toast-instance-${this.id}`) as HTMLUListElement
+  }
+
+  onAnimationend({ target }: AnimationEvent) {
+    if (target instanceof HTMLElement && target.dataset.removed === 'true') {
+      target.remove()
+    }
   }
 }

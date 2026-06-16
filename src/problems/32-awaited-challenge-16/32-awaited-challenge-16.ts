@@ -15,7 +15,9 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-type MyAwaited<T> = {};
+type MyAwaited<T> = T extends { then: (onfulfilled: (arg: infer V) => any) => any }
+  ? MyAwaited<V>
+  : T
 
 /* _____________ Test Cases _____________ */
 
