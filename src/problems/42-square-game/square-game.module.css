@@ -1,1 +1,26 @@
 /* Student solution styles */
+.container {
+  display: grid;
+  grid-template-columns: repeat(3, 150px);
+  grid-auto-rows: 150px;
+  width: fit-content;
+  border: 1px solid black;
+}
+
+.square {
+  background: rgba(117, 227, 159, 0.1);
+  font-size: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid black;
+}
+
+.square[data-empty='true'] {
+  background-color: black;
+}
+
+.status {
+  font-size: 1.5rem;
+  margin: 2rem 0px;
+}

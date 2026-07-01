@@ -5,8 +5,8 @@ export type TButtonAction = (state: string, operator: string) => string
 
 /** A calculator button definition mapping a label to its action function. */
 export type TCalculatorButton = {
-    label: string
-    action: TButtonAction
+  label: string
+  action: TButtonAction
 }
 
 /** Sentinel value returned when an expression cannot be evaluated. */
@@ -19,7 +19,7 @@ const OPERATORS = new Set(['+', '-', '*', '/', '%'])
  * @example toFixedWithoutZeros(42, 5)      // '42'
  */
 export const toFixedWithoutZeros = (num: number, precision: number) =>
-    num.toFixed(precision).replace(/\.*0+$/, '')
+  num.toFixed(precision).replace(/\.*0+$/, '')
 
 // TODO: Implement the following action functions:
 
@@ -30,13 +30,16 @@ export const toFixedWithoutZeros = (num: number, precision: number) =>
  * @example applyNumber('12', '3') // '123'
  * @example applyNumber('3', '.')  // '3.'
  */
-export const applyNumber: TButtonAction = (_state: string, _number: string) => {
-  throw new Error('Not implemented')
+export const applyNumber: TButtonAction = (state: string, number: string) => {
+  if (state === '0') {
+    return number
+  }
+  return `${state}${number}`
 }
 
-// console.log(applyNumber('0', '5'))        // '5'
-// console.log(applyNumber('12', '3'))       // '123'
-// console.log(applyNumber('3', '.'))        // '3.'
+// console.log(applyNumber('0', '5')) // '5'
+// console.log(applyNumber('12', '3')) // '123'
+// console.log(applyNumber('3', '.')) // '3.'
 
 /**
  * Appends an operator (+, -, *, /, %) to the expression.
@@ -45,11 +48,15 @@ export const applyNumber: TButtonAction = (_state: string, _number: string) => {
  * @example applyOperation('5', '+')  // '5+'
  * @example applyOperation('5+', '*') // '5*' (replaces)
  */
-export const applyOperation: TButtonAction = (_state: string, _operator: string) => {
-  throw new Error('Not implemented')
+export const applyOperation: TButtonAction = (state: string, operator: string) => {
+  if (OPERATORS.has(state.at(-1) ?? '')) {
+    return `${state.slice(0, -1)}${operator}`
+  }
+  return `${state}${operator}`
 }
-// console.log(applyOperation('5', '+'))     // '5+'
-// console.log(applyOperation('5+', '*'))    // '5*'
+
+// console.log(applyOperation('5', '+')) // '5+'
+// console.log(applyOperation('5+', '*')) // '5*'
 
 /**
  * Evaluates the expression string using `new Function('return ' + state)()`.
@@ -60,13 +67,21 @@ export const applyOperation: TButtonAction = (_state: string, _operator: string)
  * @example calculate('2+3*4', '=') // '14'
  * @example calculate('1/0', '=')   // 'Invalid value'
  */
-export const calculate: TButtonAction = (_state: string, _: string) => {
-  throw new Error('Not implemented')
+export const calculate: TButtonAction = (state: string, _: string) => {
+  const raw = new Function(`return ${state}`)()
+
+  if (Number.isNaN(raw) || !Number.isFinite(raw)) {
+    return INVALID_VALUE
+  }
+  return raw
 }
+
+// console.log(calculate('2+3*4', '=')) // '14'
+// console.log(calculate('1/0', '=')) // 'Invalid value'
 
 /** Resets the calculator state back to '0'. */
 export const clear: TButtonAction = (_: string, __: string) => {
-  throw new Error('Not implemented')
+  return '0'
 }
 // console.log(clear('123', ''))             // '0'
 
@@ -76,11 +91,14 @@ export const clear: TButtonAction = (_: string, __: string) => {
  * @example negate('5+3', '')    // '-(5+3)'
  * @example negate('-(5+3)', '') // '5+3'
  */
-export const negate: TButtonAction = (_state: string) => {
-  throw new Error('Not implemented')
+export const negate: TButtonAction = (state: string) => {
+  if (state.startsWith('-(') && state.endsWith(')')) {
+    return state.slice(2, -1)
+  }
+  return `-(${state})`
 }
-// console.log(negate('5+3', ''))            // '-(5+3)'
-// console.log(negate('-(5+3)', ''))         // '5+3'
+// console.log(negate('5+3', '')) // '-(5+3)'
+// console.log(negate('-(5+3)', '')) // '5+3'
 
 /**
  * Complete map of calculator buttons.
@@ -88,23 +106,23 @@ export const negate: TButtonAction = (_state: string) => {
  * Layout order: AC, +/-, %, ÷, then digits 7-9, ×, 4-6, -, 1-3, +, 0, ., =
  */
 export const BUTTONS = new Map<string, TCalculatorButton>([
-    ['AC', {label: 'AC', action: () => {}}],
-    ['+/-', {label: '+/-', action: () => {}}],
-    ['%', {label: '%', action: () => {}}],
-    ['/', {label: '/', action: () => {}}],
-    ['7', {label: '7', action: () => {}}],
-    ['8', {label: '8', action: () => {}}],
-    ['9', {label: '9', action: () => {}}],
-    ['*', {label: '*', action: () => {}}],
-    ['4', {label: '4', action: () => {}}],
-    ['5', {label: '5', action: () => {}}],
-    ['6', {label: '6', action: () => {}}],
-    ['-', {label: '-', action: () => {}}],
-    ['1', {label: '1', action: () => {}}],
-    ['2', {label: '2', action: () => {}}],
-    ['3', {label: '3', action: () => {}}],
-    ['+', {label: '+', action: () => {}}],
-    ['0', {label: '0', action: () => {}}],
-    ['.', {label: '.', action: () => {}}],
-    ['=', {label: '=', action: () => {}}],
-]);
+  ['AC', { label: 'AC', action: clear }],
+  ['+/-', { label: '+/-', action: negate }],
+  ['%', { label: '%', action: applyOperation }],
+  ['/', { label: '/', action: applyOperation }],
+  ['7', { label: '7', action: applyNumber }],
+  ['8', { label: '8', action: applyNumber }],
+  ['9', { label: '9', action: applyNumber }],
+  ['*', { label: '*', action: applyOperation }],
+  ['4', { label: '4', action: applyNumber }],
+  ['5', { label: '5', action: applyNumber }],
+  ['6', { label: '6', action: applyNumber }],
+  ['-', { label: '-', action: applyOperation }],
+  ['1', { label: '1', action: applyNumber }],
+  ['2', { label: '2', action: applyNumber }],
+  ['3', { label: '3', action: applyNumber }],
+  ['+', { label: '+', action: applyOperation }],
+  ['0', { label: '0', action: applyNumber }],
+  ['.', { label: '.', action: applyNumber }],
+  ['=', { label: '=', action: calculate }],
+])
