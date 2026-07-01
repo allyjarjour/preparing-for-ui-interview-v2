@@ -11,7 +11,11 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-// Your implementation here
+type Replace<S extends string, Target extends string, Replace extends string> = Target extends ''
+  ? S
+  : S extends `${infer Prefix}${Target}${infer Suffix}`
+    ? `${Prefix}${Replace}${Suffix}`
+    : S
 
 /* _____________ Test Cases _____________ */
 

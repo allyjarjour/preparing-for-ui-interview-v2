@@ -27,7 +27,11 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-// Your implementation here
+type DeepReadonly<T> = keyof T extends never
+  ? T
+  : {
+      readonly [Property in keyof T]: DeepReadonly<T[Property]>
+    }
 
 /* _____________ Test Cases _____________ */
 

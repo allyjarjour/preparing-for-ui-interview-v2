@@ -49,19 +49,28 @@ export const SquareGame = ({ initState }: TSquareGameProps = {}) => {
     if (
       event.target instanceof HTMLElement &&
       event.target.dataset.row &&
-      event.target.dataset.col
+      event.target.dataset.col &&
+      emptySquare.current?.dataset?.row &&
+      emptySquare.current?.dataset?.col
     ) {
-      const greySquareRow = parseInt(emptySquare.current?.dataset?.row ?? '0')
-      const greySquareCol = parseInt(emptySquare.current?.dataset?.col ?? '0')
+      const greySquareRow = parseInt(emptySquare.current.dataset.row)
+      const greySquareCol = parseInt(emptySquare.current.dataset.col)
       const newSquareRow = parseInt(event.target.dataset.row)
       const newSquareCol = parseInt(event.target.dataset.col)
 
       const isValid = validate([newSquareRow, newSquareCol], [greySquareRow, greySquareCol])
 
       if (isValid) {
-        const newState = [...(state ?? [])]
+        const newState = structuredClone(state)
         newState[newSquareRow]?.splice(newSquareCol, 1, null)
         newState[greySquareRow]?.splice(greySquareCol, 1, parseInt(event.target.innerText ?? ''))
+
+        // OR:
+        // ;[newState[newSquareRow][newSquareCol], newState[greySquareRow][greySquareCol]] = [
+        //   newState[greySquareRow][greySquareCol],
+        //   newState[newSquareRow][newSquareCol],
+        // ]
+
         setState(newState)
       }
     }
