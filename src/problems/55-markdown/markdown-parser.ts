@@ -20,7 +20,7 @@ type TRichTextPatternTuple = [RegExp, TRichTextPatternReplacer]
  *        \[([^[]+)\] — $2: link text inside [ ], captured via [^[]+ (one or more non-'[' chars)
  *        \(([^)]+)\) — $3: URL inside ( ), captured via [^)]+ (one or more non-')' chars)
  */
-const LINK: TRichTextPatternTuple = [/(^|[^!])\[([^[]+)\]\(([^)]+)\)/g, 'TO_IMPLEMENT']
+const LINK: TRichTextPatternTuple = [/(^|[^!])\[([^[]+)\]\(([^)]+)\)/g, '$1<a href="$3">$2</a>']
 // console.log('[link](http://ex.com)'.replace(...LINK)) → '<a href="http://ex.com">link</a>'
 /*
  * Converts ###### text to <h6>text</h6> (must be matched before smaller heading levels)
@@ -29,37 +29,37 @@ const LINK: TRichTextPatternTuple = [/(^|[^!])\[([^[]+)\]\(([^)]+)\)/g, 'TO_IMPL
  *        \s?   — optional whitespace after hashes
  *        ([^\n]+) — $1: capture the heading text (everything until newline)
  */
-const HEADING_H6: TRichTextPatternTuple = [/^#{6}\s?([^\n]+)/gm, 'TO_IMPLEMENT']
+const HEADING_H6: TRichTextPatternTuple = [/^#{6}\s?([^\n]+)/gm, '<p>$1</p>']
 // console.log('###### Title'.replace(...HEADING_H6)) → '<h6>Title</h6>'
 /*
  * Converts ##### text to <h5>text</h5>
  * Regex: same pattern as H6 but #{5} — matched after H6 so ###### isn't caught as #####
  */
-const HEADING_H5: TRichTextPatternTuple = [/^#{5}\s?([^\n]+)/gm, 'TO_IMPLEMENT']
+const HEADING_H5: TRichTextPatternTuple = [/^#{5}\s?([^\n]+)/gm, '<h5>$1</h5>']
 // console.log('##### Title'.replace(...HEADING_H5)) → '<h5>Title</h5>'
 /*
  * Converts #### text to <h4>text</h4>
  * Regex: same pattern — #{4}
  */
-const HEADING_H4: TRichTextPatternTuple = [/^#{4}\s?([^\n]+)/gm, 'TO_IMPLEMENT']
+const HEADING_H4: TRichTextPatternTuple = [/^#{4}\s?([^\n]+)/gm, '<h4>$1</h4>']
 // console.log('#### Title'.replace(...HEADING_H4)) → '<h4>Title</h4>'
 /*
  * Converts ### text to <h3>text</h3>
  * Regex: same pattern — #{3}
  */
-const HEADING_H3: TRichTextPatternTuple = [/^#{3}\s?([^\n]+)/gm, 'TO_IMPLEMENT']
+const HEADING_H3: TRichTextPatternTuple = [/^#{3}\s?([^\n]+)/gm, '<h3>$1</h3>']
 // console.log('### Title'.replace(...HEADING_H3)) → '<h3>Title</h3>'
 /*
  * Converts ## text to <h2>text</h2>
  * Regex: same pattern — #{2}
  */
-const HEADING_H2: TRichTextPatternTuple = [/^#{2}\s?([^\n]+)/gm, 'TO_IMPLEMENT']
+const HEADING_H2: TRichTextPatternTuple = [/^#{2}\s?([^\n]+)/gm, '<h2>$1</h2>']
 // console.log('## Title'.replace(...HEADING_H2)) → '<h2>Title</h2>'
 /*
  * Converts # text to <h1>text</h1>
  * Regex: same pattern — #{1}; matched last so ## and ### aren't caught as #
  */
-const HEADING_H1: TRichTextPatternTuple = [/^#{1}\s?([^\n]+)/gm, 'TO_IMPLEMENT']
+const HEADING_H1: TRichTextPatternTuple = [/^#{1}\s?([^\n]+)/gm, '<h1>$1</h1>']
 // console.log('# Title'.replace(...HEADING_H1)) → '<h1>Title</h1>'
 /*
  * Wraps plain text lines (not headings or already-wrapped HTML) in <p> tags
@@ -69,8 +69,8 @@ const HEADING_H1: TRichTextPatternTuple = [/^#{1}\s?([^\n]+)/gm, 'TO_IMPLEMENT']
  *        Flags: /gm   — global + multiline (^ and $ match per line)
  */
 const PARAGRAPH: TRichTextPatternTuple = [
-    /^(?!#)(?!.*<\/?(ul|ol|img|h1|h2|p|table|tr|th|td|pre|code)>)(.*\S.*)$/gm,
-    '<p>$&</p>',
+  /^(?!#)(?!.*<\/?(ul|ol|img|h1|h2|p|table|tr|th|td|pre|code)>)(.*\S.*)$/gm,
+  '<p>$&</p>',
 ]
 // console.log('Hello world'.replace(...PARAGRAPH)) → '<p>Hello world</p>'
 /*
@@ -79,13 +79,13 @@ const PARAGRAPH: TRichTextPatternTuple = [
  *        (.+?) — $1: lazy match (shortest possible) of the bold content
  *        \*\*  — closing **
  */
-const BOLD: TRichTextPatternTuple = [/\*\*(.+?)\*\*/g, 'TO_IMPLEMENT']
+const BOLD: TRichTextPatternTuple = [/\*\*(.+?)\*\*/g, '<b>$1</b>']
 // console.log('**bold**'.replace(...BOLD)) → '<b>bold</b>'
 /*
  * Converts *text* to <i>text</i> (applied after BOLD so ** is already consumed)
  * Regex: \*(.+?)\* — same as BOLD but single *; works because ** was already replaced
  */
-const ITALIC: TRichTextPatternTuple = [/\*(.+?)\*/g, 'TO_IMPLEMENT']
+const ITALIC: TRichTextPatternTuple = [/\*(.+?)\*/g, '<i>$1</i>']
 // console.log('*italic*'.replace(...ITALIC)) → '<i>italic</i>'
 /*
  * Converts ~~text~~ to <s>text</s>
@@ -94,7 +94,7 @@ const ITALIC: TRichTextPatternTuple = [/\*(.+?)\*/g, 'TO_IMPLEMENT']
  *        ([^\n]+?) — $1: lazy match of content (no newlines)
  *        ~~      — closing ~~
  */
-const STRIKETHROUGH: TRichTextPatternTuple = [/~~\s?([^\n]+?)~~/g, 'TO_IMPLEMENT']
+const STRIKETHROUGH: TRichTextPatternTuple = [/~~\s?([^\n]+?)~~/g, '<s>$1</s>']
 // console.log('~~deleted~~'.replace(...STRIKETHROUGH)) → '<s>deleted</s>'
 
 /*
@@ -105,14 +105,14 @@ const STRIKETHROUGH: TRichTextPatternTuple = [/~~\s?([^\n]+?)~~/g, 'TO_IMPLEMENT
  *        (?:\n\s*[-+]\s.*)* — continue matching consecutive list item lines
  */
 const UNORDERED_LIST: TRichTextPatternTuple = [
-    /(?:^|\n)(?![^\n]*<[^>]*>)(\s*[-+]\s.*(?:\n\s*[-+]\s.*)*)/g,
-    (fullMatch: string) => {
-        const items = fullMatch
-            .trim()
-            .split('\n')
-            .reduce((acc, next) => acc + '<li>' + next.substring(2) + '</li>', '')
-        return `\n<ul>${items}</ul>`
-    },
+  /(?:^|\n)(?![^\n]*<[^>]*>)(\s*[-+]\s.*(?:\n\s*[-+]\s.*)*)/g,
+  (fullMatch: string) => {
+    const items = fullMatch
+      .trim()
+      .split('\n')
+      .reduce((acc, next) => acc + '<li>' + next.substring(2) + '</li>', '')
+    return `\n<ul>${items}</ul>`
+  },
 ]
 // console.log('- a\n- b'.replace(...UNORDERED_LIST)) → '\n<ul><li>a</li><li>b</li></ul>'
 
@@ -124,14 +124,14 @@ const UNORDERED_LIST: TRichTextPatternTuple = [
  *        (…)+               — one or more consecutive numbered lines
  */
 const ORDERED_LIST: TRichTextPatternTuple = [
-    /(?:^|\n)(?![^\n]*<[^>]*>)(\s*[0-9]+\.\s.*)+/g,
-    (fullMatch: string) => {
-        const items = fullMatch
-            .trim()
-            .split('\n')
-            .reduce((acc, next) => acc + '<li>' + next.substring(next.indexOf('.') + 2) + '</li>', '')
-        return `\n<ol>${items}</ol>`
-    },
+  /(?:^|\n)(?![^\n]*<[^>]*>)(\s*[0-9]+\.\s.*)+/g,
+  (fullMatch: string) => {
+    const items = fullMatch
+      .trim()
+      .split('\n')
+      .reduce((acc, next) => acc + '<li>' + next.substring(next.indexOf('.') + 2) + '</li>', '')
+    return `\n<ol>${items}</ol>`
+  },
 ]
 // console.log('1. a\n2. b'.replace(...ORDERED_LIST)) → '\n<ol><li>a</li><li>b</li></ol>'
 
@@ -143,30 +143,54 @@ const ORDERED_LIST: TRichTextPatternTuple = [
  *        Flags: /gm             — global + multiline
  */
 const TABLE: TRichTextPatternTuple = [
-    /^(\|.+\|\r?\n)(\|[-:| ]+\|\r?\n)((?:\|.*\|\r?\n?)*)/gm,
-    (_: string, header: string, __: string, rows: string) => {
-        const filterEmpty = (str: string) => Boolean(str.trim())
-        const xmlHeaders: Array<string> = header
-            .split('|')
-            .filter(filterEmpty)
-            .map((header) => `<th>${header.trim()}</th>`)
-        const xmlRows: Array<string> = rows
-            .split('\n')
-            .filter(Boolean)
-            .map((row) => {
-                const cells = row
-                    .split('|')
-                    .filter(filterEmpty)
-                    .map((cell) => `<td>${cell.trim()}</td>`)
-                    .join('')
-                return `<tr>${cells}</tr>`
-            })
-        return `<table><thead><tr>${xmlHeaders.join('')}</tr></thead><tbody>${xmlRows.join('')}</tbody></table>`
-            .trim()
-            .concat('\n')
-    },
+  /^(\|.+\|\r?\n)(\|[-:| ]+\|\r?\n)((?:\|.*\|\r?\n?)*)/gm,
+  (_: string, header: string, __: string, rows: string) => {
+    const filterEmpty = (str: string) => Boolean(str.trim())
+    const xmlHeaders: Array<string> = header
+      .split('|')
+      .filter(filterEmpty)
+      .map((header) => `<th>${header.trim()}</th>`)
+    const xmlRows: Array<string> = rows
+      .split('\n')
+      .filter(Boolean)
+      .map((row) => {
+        const cells = row
+          .split('|')
+          .filter(filterEmpty)
+          .map((cell) => `<td>${cell.trim()}</td>`)
+          .join('')
+        return `<tr>${cells}</tr>`
+      })
+    return `<table><thead><tr>${xmlHeaders.join('')}</tr></thead><tbody>${xmlRows.join('')}</tbody></table>`
+      .trim()
+      .concat('\n')
+  },
 ]
 // console.log('| H1 | H2 |\n|---|---|\n| a | b |\n'.replace(...TABLE)) → '<table><thead>...'
+class TRichTextPattern {
+  constructor(
+    public regexp: RegExp,
+    public replacer: TRichTextPatternReplacer,
+  ) {}
+  apply(text: string) {
+    return text.replace(this.regexp, this.replacer as any)
+  }
+}
+
+class TRichTextRule {
+  constructor(
+    public name: string,
+    public patterns: TRichTextPattern[],
+  ) {}
+  apply(text: string) {
+    let result = text
+
+    for (const pattern of this.patterns) {
+      result = pattern.apply(result)
+    }
+    return result
+  }
+}
 
 /*
  * Step 1: TRichTextPattern class — wraps a [regexp, replacer] tuple:
@@ -192,8 +216,29 @@ const TABLE: TRichTextPatternTuple = [
  *   [LINK, HEADER, TABLE, LIST, PARAGRAPH, FORMATTING]
  */
 
-export function parseRichText(text: string, rules: Array<any> = []) {
-    return text
+export function parseRichText(text: string, rules: Array<TRichTextRule> = []) {
+  return rules.reduce((acc, next) => next.apply(acc), text)
 }
 
-export const RICH_TEXT_RULES: Array<any> = []
+export const RICH_TEXT_RULES: Array<TRichTextRule> = [
+  new TRichTextRule('links', [new TRichTextPattern(...LINK)]),
+  new TRichTextRule('headings', [
+    new TRichTextPattern(...HEADING_H6),
+    new TRichTextPattern(...HEADING_H5),
+    new TRichTextPattern(...HEADING_H4),
+    new TRichTextPattern(...HEADING_H3),
+    new TRichTextPattern(...HEADING_H2),
+    new TRichTextPattern(...HEADING_H1),
+  ]),
+  new TRichTextRule('table', [new TRichTextPattern(...TABLE)]),
+  new TRichTextRule('lists', [
+    new TRichTextPattern(...UNORDERED_LIST),
+    new TRichTextPattern(...ORDERED_LIST),
+  ]),
+  new TRichTextRule('paragraphs', [new TRichTextPattern(...PARAGRAPH)]),
+  new TRichTextRule('formatting', [
+    new TRichTextPattern(...BOLD),
+    new TRichTextPattern(...STRIKETHROUGH),
+    new TRichTextPattern(...ITALIC),
+  ]),
+]

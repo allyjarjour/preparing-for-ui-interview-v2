@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 import css from './markdown.module.css'
 import flex from '@course/styles'
 import cx from '@course/cx'
+import { parseRichText, RICH_TEXT_RULES } from './markdown-parser'
 interface MarkdownProps {
   text: string
 }
@@ -23,13 +24,13 @@ interface MarkdownProps {
  * ```
  */
 function escapeHTMLAmpersand(text?: string): string {
-    return text?.replace(/&/g, '&amp;') ?? ''
+  return text?.replace(/&/g, '&amp;') ?? ''
 }
 
 function sanitize(markdown: string) {
-    // TODO: Implement
-    // Use DOMParser to parse escaped markdown as XML, return sanitized text
-    return markdown
+  // TODO: Implement
+  // Use DOMParser to parse escaped markdown as XML, return sanitized text
+  return markdown
 }
 
 /**
@@ -39,6 +40,7 @@ function sanitize(markdown: string) {
  */
 export const Markdown = ({ text }: MarkdownProps) => {
   // Step 1: Parse markdown to HTML string — useMemo(() => parseRichText(text, RICH_TEXT_RULES), [text])
+  const html = parseRichText(text, RICH_TEXT_RULES)
   // Step 2: Convert HTML string to DOM — new DOMParser().parseFromString(html, 'text/html')
   // Step 3: Recursive htmlToReact(node) function — converts DOM nodes to React elements:
   //   - Text nodes → return textContent
@@ -46,5 +48,5 @@ export const Markdown = ({ text }: MarkdownProps) => {
   //   - Recursively process childNodes
   //   - Handle: div, p, h1-h6, ul, ol, li, strong, em, del, a, img, blockquote, hr, pre, code, table elements, details, summary
   // Step 4: Render — wrap result in <div className={css.markdown}>
-  return <div>TODO: Implement</div>
+  return <div dangerouslySetInnerHTML={{ __html: html }} className={css.markdown}></div>
 }
