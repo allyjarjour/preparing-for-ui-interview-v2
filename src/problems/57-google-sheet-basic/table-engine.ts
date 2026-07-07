@@ -1,42 +1,50 @@
 // bun test src/problems/57-google-sheet-basic/test/table-engine.test.ts
 
-import type { CellId } from '../../utilities/google-sheet-parser'
+import type { CellId, Compiled } from '../../utilities/google-sheet-parser'
 
 export type { CellId } from '../../utilities/google-sheet-parser'
 
 export class TableEngine {
-  // TODO: Step 1 - Setup Hash Maps
-  // Instantiate 4 Map structures:
-  // - #raw: What the user typed ("10" or "=A1+5")
-  // - #val: The computed mathematical result ("10" or "15")
-  // - #deps: Direct dependencies (A1 requires B1 to compute)
-  // - #reverseDeps: Reverse dependencies (B1 affects A1, so A1 recomputes if B1 changes)
-  setRaw(_id: CellId, _raw: string): { changed: CellId[] } {
-    // TODO: Step 4 - Basic Write API
-    // Blindly set #raw and #val maps without any compilation or error checking yet.
-    // Return { changed: [id] }.
-    throw new Error('TODO: Implement')
+  #raw: Map<CellId, string> = new Map()
+  #val: Map<CellId, string> = new Map()
+  #deps: Map<CellId, Set<CellId>> = new Map()
+  #reverseDeps: Map<CellId, Set<CellId>> = new Map()
+  #complied: Map<CellId, Compiled> = new Map()
+
+  setRaw(id: CellId, raw: string): { changed: CellId[] } {
+    this.#raw.set(id, raw)
+    this.#val.set(id, raw)
+
+    return { changed: [id] }
   }
 
-  getRaw(_id: CellId): string {
-    // TODO: Step 2 - Basic Read APIs
-    // Return the raw string input for a cell, or '' if empty
-    throw new Error('TODO: Implement')
+  getRaw(id: CellId): string {
+    return this.#raw.get(id) ?? ''
   }
 
-  getValue(_id: CellId): string {
-    throw new Error('TODO: Implement')
+  getValue(id: CellId): string {
+    return this.#val.get(id) ?? ''
   }
 
-  getDeps(_id: CellId): ReadonlySet<CellId> {
-    // TODO: Step 3 - Fallback Factory
-    // If the #deps Map.get() returns undefined, initialize and #set a new
-    // empty Set<CellId>() to that Map before returning it, instead of throwing errors.
-    throw new Error('TODO: Implement')
+  getDeps(id: CellId): ReadonlySet<CellId> {
+    let set = this.#deps.get(id)
+
+    if (!set) {
+      set = new Set()
+      this.#deps.set(id, set)
+    }
+
+    return set
   }
 
-  getRevDeps(_id: CellId): ReadonlySet<CellId> {
-    // TODO: Step 3 - Fallback Factory
-    throw new Error('TODO: Implement')
+  getRevDeps(id: CellId): ReadonlySet<CellId> {
+    let set = this.#reverseDeps.get(id)
+
+    if (!set) {
+      set = new Set()
+      this.#reverseDeps.set(id, set)
+    }
+
+    return set
   }
 }

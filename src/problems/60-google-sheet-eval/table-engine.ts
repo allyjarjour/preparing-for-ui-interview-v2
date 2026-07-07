@@ -1,14 +1,14 @@
 // bun test src/problems/60-google-sheet-eval/test/table-engine.test.ts
 
-// @ts-ignore
 import {
   CYCLE as _CYCLE,
   ERROR as _ERROR,
   tokenize,
   toRpn,
-  evalRpn as _evalRpn,
+  evalRpn,
   type CellId,
   type Compiled,
+  ERROR,
 } from '../../utilities/google-sheet-parser'
 
 export type { CellId } from '../../utilities/google-sheet-parser'
@@ -28,7 +28,7 @@ export class TableEngine {
 
     // TODO: Update the value by evaluating the cell directly.
     // Replace this placeholder with: `this._evalCell(id)`
-    this.#val.set(id, raw)
+    this.#val.set(id, this._evalCell(id))
 
     const changed = [id]
     return { changed }
@@ -104,12 +104,26 @@ export class TableEngine {
   }
 
   // Exposed for testing instead of full recompute loop
-  _evalCell(_id: CellId): string {
+  _evalCell(id: CellId): string {
     // TODO: Step 1 - Build the Evaluation Pipeline
     // 1. Fetch `#raw` text. If it doesn't start with `=`, just return the raw text.
+    const raw = this.getRaw(id)
+    if (!raw.startsWith('=')) return raw
     // 2. Fetch the `#compiled` properties for this cell. If it failed to compile, it contains an `{ error }` — return ERROR.
-    // 3. Run `evalRpn(compiled.rpn, (refId) => this.getValue(refId))` to evaluate the formula.
-    throw new Error('TODO: Evaluate cell using evalRpn with getValue as the lookup callback')
+    const compiled = this.#compiled.get(id)
+
+    if (compiled == null) return ''
+    if ('error' in compiled) return ERROR
+
+    const { rpn } = compiled
+
+    const value = evalRpn(rpn, (refId) => this.getValue(refId))
+
+    if (Number.isNaN(+value)) {
+      return ERROR
+    }
+
+    return value
   }
 
   // We are copying Topo into the class early here, preparing for 19.5
@@ -169,29 +183,29 @@ export class TableEngine {
 }
 
 // ── Uncomment below to test your implementation ─────────────────────
-// const engine = new TableEngine()
+const engine = new TableEngine()
+
+// Basic values
+engine.setRaw('A1', '10')
+engine.setRaw('B1', '20')
+console.log('A1 value:', engine.getValue('A1')) // "10"
 //
-// // Basic values
-// engine.setRaw('A1', '10')
-// engine.setRaw('B1', '20')
-// console.log('A1 value:', engine.getValue('A1'))  // "10"
-//
-// // Formula evaluation — should compute the result
-// engine.setRaw('C1', '=A1+B1')
-// console.log('C1 value:', engine.getValue('C1'))  // "30" (if _evalCell works)
+// Formula evaluation — should compute the result
+engine.setRaw('C1', '=A1+B1')
+console.log('C1 value:', engine.getValue('C1')) // "30" (if _evalCell works)
 //
 // // Chained formula — depends on another formula
-// engine.setRaw('D1', '=C1*2')
-// console.log('D1 value:', engine.getValue('D1'))  // "60"
+engine.setRaw('D1', '=C1*2')
+console.log('D1 value:', engine.getValue('D1')) // "60"
 //
 // // Division by zero — should return #ERROR
-// engine.setRaw('E1', '=1/0')
-// console.log('E1 value:', engine.getValue('E1'))  // "#ERROR"
+engine.setRaw('E1', '=1/0')
+console.log('E1 value:', engine.getValue('E1')) // "#ERROR"
 //
 // // Plain text — no formula, returned as-is
-// engine.setRaw('F1', 'hello')
-// console.log('F1 value:', engine.getValue('F1'))  // "hello"
+engine.setRaw('F1', 'hello')
+console.log('F1 value:', engine.getValue('F1')) // "hello"
 //
 // // Invalid formula — should return #ERROR
-// engine.setRaw('G1', '=A1+')
-// console.log('G1 value:', engine.getValue('G1'))  // "#ERROR"
+engine.setRaw('G1', '=A1+')
+console.log('G1 value:', engine.getValue('G1')) // "#ERROR"

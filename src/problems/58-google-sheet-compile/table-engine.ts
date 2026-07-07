@@ -21,9 +21,11 @@ export class TableEngine {
     this.#val.set(id, raw) // Set value as raw text for now (no evaluation yet)
 
     // Step 4 - Tie it together
+    const nextDeps = this.#compile(id, raw)
+    this.setDeps(id, nextDeps)
     // Call #compile to get deps, then call setDeps to update the graph.
     // Return { changed: [id] }
-    throw new Error('TODO: compile and track dependencies')
+    return { changed: [id] }
   }
 
   getRaw(id: CellId): string {
@@ -57,12 +59,25 @@ export class TableEngine {
   /* Step 3 - Dependency Diffing
    * Updates forward and reverse dependency maps when a cell's deps change.
    * 1. Grab prevDeps from getDeps(id)
-   * 2. For every old dep no longer in nextDeps, delete id from that dep's revDeps
-   * 3. For every new dep not in prevDeps, add id to that dep's revDeps
    * 4. Update #deps map with nextDeps
    */
   setDeps(id: CellId, nextDeps: Set<CellId>) {
-    throw new Error('TODO: Update dependency and reverse dependency maps')
+    const prevDeps = this.getDeps(id)
+
+    for (const prevDep of prevDeps) {
+      if (!nextDeps.has(prevDep)) {
+        // * 2. For every old dep no longer in nextDeps, delete id from that dep's revDeps
+        this.getRevDeps(prevDep).delete(id)
+      }
+    }
+
+    for (const nextDep of nextDeps) {
+      if (!prevDeps.has(nextDep)) {
+        //  * 3. For every new dep not in prevDeps, add id to that dep's revDeps
+        this.getRevDeps(nextDep).add(id)
+      }
+    }
+    this.#deps.set(id, nextDeps)
   }
 
   /* Step 1–2 - Compile
@@ -72,7 +87,40 @@ export class TableEngine {
    * - On success: extract 'ref' tokens as deps, store { rpn }, return deps set.
    */
   #compile(id: CellId, raw: string): Set<CellId> {
-    throw new Error('TODO: Use tokenize and toRpn to compile expression into RPN tokens')
+    const deps = new Set<CellId>()
+    if (!this.#raw.get(id)?.startsWith('=')) {
+      this.#compiled.set(id, null)
+      return deps
+    }
+    const tokens = tokenize(raw.slice(1))
+
+    if (!tokens.ok) {
+      this.#compiled.set(id, {
+        error: tokens.error,
+      })
+      return deps
+    }
+
+    const rpn = toRpn(tokens.tokens)
+
+    if (!rpn.ok) {
+      this.#compiled.set(id, {
+        error: rpn.error,
+      })
+      return deps
+    }
+
+    this.#compiled.set(id, {
+      rpn: rpn.rpn,
+    })
+
+    for (const token of rpn.rpn) {
+      if (token.t === 'ref') {
+        deps.add(token.id)
+      }
+    }
+
+    return deps
   }
 
   /* Exposed for testing */

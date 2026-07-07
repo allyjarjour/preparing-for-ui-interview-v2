@@ -8,6 +8,7 @@ import {
   evalRpn,
   type CellId,
   type Compiled,
+  CYCLE,
 } from '../../utilities/google-sheet-parser'
 
 export type { CellId } from '../../utilities/google-sheet-parser'
@@ -165,45 +166,60 @@ export class TableEngine {
     return evalRpn(compiled.rpn, (refId) => this.getValue(refId))
   }
 
-  #recomputeFrom(_start: CellId): CellId[] {
+  #recomputeFrom(start: CellId): CellId[] {
     // TODO: Step 1 - Recomputation Pipeline
     // 1. Pass the edited `start` cell `id` into `#affectedFrom`.
+    const affected = this._affectedFrom(start)
+    const { cyclic, order } = this._topoSort(affected)
     // 2. Pass that output into `#topoSort`.
     // 3. Create a `changed` array.
+    for (const cell of cyclic) {
+      this.#val.set(cell, CYCLE)
+    }
+
+    for (const cell of order) {
+      if (!cyclic.has(cell)) {
+        const val = this._evalCell(cell)
+        this.#val.set(cell, val)
+      }
+    }
+
+    const orderedSet = new Set(order)
+    const changed = orderedSet.union(cyclic)
     // 4. Iterate over the `cyclic` array outputted from your Topo sort, and force update
     //    their `engine.#value` maps to `#CYCLE!`. Push them to `changed`.
     // 5. Iterate over the chronological `order` timeline outputted from your Topo sort.
     //    Ensure the cell is not in the circular array, then run `this.#evalCell()` on it!
     //    Update its `engine.#value` to whatever the AST computed. Push to `changed`!
     // 6. Return the `changed` array!
-    throw new Error('TODO: Combine affectedFrom, topoSort, and evalCell into recompute pipeline!')
+    return Array.from(changed)
   }
 }
 
 // ── Uncomment below to test your implementation ─────────────────────
 // const engine = new TableEngine()
-//
-// // Set up a chain: A1=10, B1==A1*2 (20), C1==B1+5 (25)
+// //
+// // // Set up a chain: A1=10, B1==A1*2 (20), C1==B1+5 (25)
 // engine.setRaw('A1', '10')
 // engine.setRaw('B1', '=A1*2')
 // engine.setRaw('C1', '=B1+5')
-// console.log('A1:', engine.getValue('A1'))  // "10"
-// console.log('B1:', engine.getValue('B1'))  // "20"
-// console.log('C1:', engine.getValue('C1'))  // "25"
-//
-// // Change A1 — B1 and C1 should recompute automatically
+// console.log('A1:', engine.getValue('A1')) // "10"
+// console.log('B1:', engine.getValue('B1')) // "20"
+// console.log('C1:', engine.getValue('C1')) // "25"
+// //
+// // // Change A1 — B1 and C1 should recompute automatically
 // const { changed } = engine.setRaw('A1', '50')
-// console.log('changed:', changed)            // ["A1", "B1", "C1"] (or similar order)
-// console.log('A1:', engine.getValue('A1'))   // "50"
-// console.log('B1:', engine.getValue('B1'))   // "100"
-// console.log('C1:', engine.getValue('C1'))   // "105"
-//
-// // Circular reference — should mark both as #CYCLE!
+// console.log('changed:', changed) // ["A1", "B1", "C1"] (or similar order)
+// console.log('A1:', engine.getValue('A1')) // "50"
+// console.log('B1:', engine.getValue('B1')) // "100"
+// console.log('C1:', engine.getValue('C1')) // "105"
+// //
+// // // Circular reference — should mark both as #CYCLE!
 // engine.setRaw('D1', '=E1+1')
 // engine.setRaw('E1', '=D1+1')
-// console.log('D1:', engine.getValue('D1'))   // "#CYCLE!"
-// console.log('E1:', engine.getValue('E1'))   // "#CYCLE!"
-//
-// // Division by zero — should show #ERROR
+// console.log('D1:', engine.getValue('D1')) // "#CYCLE!"
+// console.log('E1:', engine.getValue('E1')) // "#CYCLE!"
+// //
+// // // Division by zero — should show #ERROR
 // engine.setRaw('F1', '=1/0')
-// console.log('F1:', engine.getValue('F1'))   // "#ERROR"
+// console.log('F1:', engine.getValue('F1')) // "#ERROR"
